@@ -1,4 +1,4 @@
-BOT_VERSION = "Beta 3"
+BOT_VERSION = "Beta 3a"
 
 #Проверка наличия конфига
 
