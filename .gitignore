@@ -1,3 +1,5 @@
 # created by virtualenv automatically
-
+*test.py*
 *config*
+*.idea
+data.db
