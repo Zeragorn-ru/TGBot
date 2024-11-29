@@ -1,26 +1,40 @@
 # -*- coding: windows-1251 -*-
+# импорт библиотек
+import sqlite3
+import telebot
+import requests
+import asyncio
+from config import *
+from lang_file import *
+from database import *
+from telebot import types
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
+import datetime
+
 BOT_VERSION = "Beta 3a"
 
-#Проверка наличия конфига
+# Проверка наличия конфига
 
 try:
     with open("config.py", "r"):
-        print("Config status: found ")
+        print("Config status: Success ")
 except FileNotFoundError:
     with open("config.py", "w+") as config:
         config.write(f"BOT_API=\"{input("Enter bot api: ")}\"\nlang=\"{input("select lang(en/ru): ")}\"")
 
-#импорт библиотек
-import telebot
-import asyncio
-import requests
-from config import *
-from lang_file import *
-from telebot import types
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
+try:
+    with open("data.db", "r"):
+        print("Data status: Success ")
+except FileNotFoundError:
+    with sqlite3.connect("data.db") as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users ( "chat_id"	INTEGER, "user_name"	TEXT, "currency"	TEXT, "user_id"	INTEGER, "admin" INTEGER)
+        """)
+        conn.commit()
 
 bot = telebot.TeleBot(BOT_API)
-print(lang_list.get("main_tx"))
+
 def tr(key):
     # Получаем шаблон строки по ключу
     template = lang_list[lang][key]
@@ -34,8 +48,11 @@ def tr(key):
     except KeyError as e:
         print(f"Ошибка: переменная {e} не найдена.")
 
+
 @bot.message_handler(commands=['start'])
 def start(message):
+    global mes
+    mes = message
     with open('./test.png', 'rb') as img:
         text = tr("main_tx")
         markup = InlineKeyboardMarkup()
@@ -45,7 +62,7 @@ def start(message):
                    InlineKeyboardButton(text=tr("supp_bt"), callback_data="support"))
 
         bot.send_photo(message.chat.id, img, caption=text, reply_markup=markup)
-
+        add_user(message)
 
 @bot.callback_query_handler(func=lambda call: call.data == "inf")
 def inf(call):
@@ -67,13 +84,12 @@ def main_menu(call):
                    InlineKeyboardButton(text=tr("prof_bt"), callback_data="profile"),
                    InlineKeyboardButton(text=tr("supp_bt"), callback_data="support"))
 
-        bot.edit_message_media(types.InputMediaPhoto(media=img,
-                                                     caption=f"Добро пожаловать в нашего телеграмм бота для оплаты ЖКХ \nЭтот бот поможет вам:\n · ййцц"),
+        bot.edit_message_media(types.InputMediaPhoto(media=img, caption=text),
                                reply_markup=markup, chat_id=call.message.chat.id, message_id=call.message.message_id)
 
 
 @bot.callback_query_handler(func=lambda call: call.data == "support")
-def inf(call):
+def support(call):
     with open("./test_2.png", "rb") as img:
         markup = InlineKeyboardMarkup()
         markup.add(InlineKeyboardButton(text=tr("back_bt"), callback_data="main_menu"))
@@ -82,7 +98,9 @@ def inf(call):
 
 
 @bot.callback_query_handler(func=lambda call: call.data == "profile")
-def inf(call):
+def profile(call):
+    global call_
+    call_ = call
     with open("./test_2.png", "rb") as img:
         markup = InlineKeyboardMarkup()
         markup.add(InlineKeyboardButton(text=tr("back_bt"), callback_data="main_menu"))
@@ -90,12 +108,11 @@ def inf(call):
                                message_id=call.message.message_id, reply_markup=markup)
 
 
-#Контроль через консоль
+# Контроль через консоль
 async def console_control():
-    bot.send_message(chat_id="5874936084", text="Bot was started")
     while True:
         command = await asyncio.to_thread(input, "> ")
-        if command.lower() == "test command":
+        if command.lower() == "test":
             bot.send_message(chat_id="5874936084", text="5874936084")
             print("massage")
         elif command == "stop":
@@ -106,7 +123,7 @@ async def console_control():
             print("unknown command")
 
 
-#главная функция
+# главная функция
 async def main():
     bot_task = asyncio.to_thread(bot.infinity_polling)
     console_task = console_control()
