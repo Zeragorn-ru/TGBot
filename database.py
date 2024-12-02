@@ -35,12 +35,39 @@ class DataBase:
             self.connect.commit()
 
     def add_remind(self, message, time, text):
-        print(strptime(time, "%Y.%m.%d %H:%M:%S"))
         with sqlite3.connect(self.file) as self.connect:
             self.cursor = self.connect.cursor()
             self.cursor.execute(f'''INSERT INTO "{message.from_user.id}" (event_time, text) VALUES (?,?)''',
                                 (time, text))
             self.connect.commit()
+
+    def get_remind(self, user_id):
+        with sqlite3.connect(self.file) as self.connect:
+            self.cursor = self.connect.cursor()
+            self.cursor.execute(f"""
+            SELECT * FROM "{user_id}"
+            """)
+            get = self.cursor.fetchall()
+            self.connect.commit()
+            return get
+
+    def rm_remind(self, user_id, id):
+        with sqlite3.connect(self.file) as self.connect:
+            self.cursor = self.connect.cursor()
+            self.cursor.execute(f"""
+            DELETE FROM "{user_id}" WHERE id = {id}
+            """)
+            self.connect.commit()
+
+    def get_all_users(self):
+        with sqlite3.connect(self.file) as self.connect:
+            self.cursor = self.connect.cursor()
+            self.cursor.execute("""
+            SELECT user_id FROM users 
+            """)
+            get = self.cursor.fetchall()
+            self.connect.commit()
+            return get
 
 def add_user(message):
     base = DataBase(BASE_NAME)
@@ -49,3 +76,15 @@ def add_user(message):
 def add_remind(message, time, text):
     base = DataBase(BASE_NAME)
     base.add_remind(message, time, text)
+
+def get_remind(message):
+    base = DataBase(BASE_NAME)
+    return base.get_remind(message)
+
+def rm_remind(user_id, id):
+    base = DataBase(BASE_NAME)
+    base.rm_remind(user_id, id)
+
+def get_all_users():
+    base = DataBase(BASE_NAME)
+    return base.get_all_users()
