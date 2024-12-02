@@ -11,7 +11,7 @@ from telebot import types
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 import datetime
 
-BOT_VERSION = "Beta 3a"
+BOT_VERSION = "Beta 7a"
 
 # Проверка наличия конфига
 
@@ -23,13 +23,13 @@ except FileNotFoundError:
         config.write(f"BOT_API=\"{input("Enter bot api: ")}\"\nlang=\"{input("select lang(en/ru): ")}\"")
 
 try:
-    with open("data.db", "r"):
+    with open(BASE_NAME, "r"):
         print("Data status: Success ")
 except FileNotFoundError:
-    with sqlite3.connect("data.db") as conn:
+    with sqlite3.connect(BASE_NAME) as conn:
         cursor = conn.cursor()
         cursor.execute("""
-        CREATE TABLE IF NOT EXISTS users ( "chat_id"	INTEGER, "user_name"	TEXT, "currency"	TEXT, "user_id"	INTEGER, "admin" INTEGER)
+        CREATE TABLE IF NOT EXISTS users ("user_name"	TEXT, "currency"	TEXT, "user_id"	INTEGER, "admin" INTEGER)
         """)
         conn.commit()
 
@@ -63,6 +63,7 @@ def start(message):
 
         bot.send_photo(message.chat.id, img, caption=text, reply_markup=markup)
         add_user(message)
+        add_remind(message, "2024.12.01 12:30:00", "test text")
 
 @bot.callback_query_handler(func=lambda call: call.data == "inf")
 def inf(call):
